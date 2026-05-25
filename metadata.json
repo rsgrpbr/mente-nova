@@ -1,0 +1,6 @@
+{
+  "name": "Mente Nova",
+  "description": "Aplicativo de meditação guiada e transformação mental baseado estritamente no programa de 4 semanas do livro 'Quebrando o Hábito de Ser Você Mesmo', de Joe Dispenza.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
