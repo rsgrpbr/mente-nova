@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { DiaryDeconstruction, DiaryNewDestiny } from "../types";
 import type { DiaryModo, DiaryPersistedState, StepAnswers } from "../types/diary";
 import {
+  DIARY_STORAGE_KEY,
   defaultDiaryPersisted,
   loadDiaryLocal,
   saveDiaryLocal,
-  DIARY_STORAGE_KEY,
 } from "../lib/diaryStorage";
+import { CURRENT_STORAGE_VERSION } from "../lib/appStorage";
 import {
   pullDiaryFromSupabase,
   pushDiaryToSupabase,
@@ -67,8 +68,15 @@ export function mapStepToLegacy(
   }
 }
 
+function loadDiaryState(): DiaryPersistedState {
+  if (localStorage.getItem("mente_nova_storage_version") !== String(CURRENT_STORAGE_VERSION)) {
+    return defaultDiaryPersisted();
+  }
+  return loadDiaryLocal();
+}
+
 export function useDiaryJournal() {
-  const [persisted, setPersisted] = useState<DiaryPersistedState>(loadDiaryLocal);
+  const [persisted, setPersisted] = useState<DiaryPersistedState>(loadDiaryState);
   const [respostasEtapa, setRespostasEtapa] = useState<StepAnswers>({});
   const [syncStatus, setSyncStatus] = useState<DiarySyncStatus>("idle");
   const [syncErrorDetail, setSyncErrorDetail] = useState<string | null>(null);
@@ -76,6 +84,13 @@ export function useDiaryJournal() {
   const skipPushRef = useRef(true);
 
   useEffect(() => {
+    const version = localStorage.getItem("mente_nova_storage_version");
+    if (version !== String(CURRENT_STORAGE_VERSION)) {
+      setPersisted(defaultDiaryPersisted());
+      skipPushRef.current = true;
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       setSyncStatus("loading");

@@ -54,3 +54,12 @@ CREATE POLICY "diario_insert_anon" ON public.diario_jornal
 
 CREATE POLICY "diario_update_anon" ON public.diario_jornal
   FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "diario_delete_anon" ON public.diario_jornal
+  FOR DELETE TO anon, authenticated USING (true);
+
+CREATE POLICY "progresso_delete_anon" ON public.progresso_diario
+  FOR DELETE TO anon, authenticated USING (true);
+
+CREATE POLICY "imagens_delete_anon" ON public.imagens_manifestacao
+  FOR DELETE TO anon, authenticated USING (true);
