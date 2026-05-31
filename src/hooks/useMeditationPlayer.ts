@@ -40,9 +40,6 @@ export function useMeditationPlayer({
 
   const soundscape = getSoundscapeById(soundscapeId);
   const targetDurationSec = durationMinutes * 60;
-  const usesTimer =
-    soundscape.engine === "ambient" ||
-    (soundscape.engine === "stream" && !soundscape.streamUrl);
 
   const guidedSrc = getMeditationTrackUrl(guidedTrackId);
   const mainSrc =
@@ -52,7 +49,19 @@ export function useMeditationPlayer({
         ? soundscape.streamUrl
         : "";
 
-  const effectiveDuration = usesTimer ? targetDurationSec : duration || targetDurationSec;
+  /** MP3 guiado — faixa curta em loop até acabar a sessão */
+  const usesGuidedAudio =
+    (soundscape.engine === "guided-mp3" || soundscape.engine === "guided-plus-ambient") &&
+    Boolean(mainSrc);
+
+  const usesTimer =
+    soundscape.engine === "ambient" ||
+    (soundscape.engine === "stream" && !soundscape.streamUrl);
+
+  /** Progresso e fim da sessão pelo relógio (ambient ou música em loop) */
+  const usesSessionTimer = usesTimer || usesGuidedAudio;
+
+  const effectiveDuration = usesSessionTimer ? targetDurationSec : duration || targetDurationSec;
   const progressPercent =
     effectiveDuration > 0 ? Math.min(100, (currentTime / effectiveDuration) * 100) : 0;
 
@@ -119,9 +128,8 @@ export function useMeditationPlayer({
     }
   }, [soundscape]);
 
-  const startTimerPlayback = useCallback(() => {
+  const startSessionTimer = useCallback(() => {
     stopTimer();
-    startAmbientLayers();
     timerRef.current = setInterval(() => {
       setCurrentTime((prev) => {
         const next = Math.min(prev + 1, targetDurationSec);
@@ -133,7 +141,12 @@ export function useMeditationPlayer({
         return next;
       });
     }, 1000);
-  }, [stopTimer, startAmbientLayers, checkScheduledBells, targetDurationSec, finishSession]);
+  }, [stopTimer, checkScheduledBells, targetDurationSec, finishSession]);
+
+  const startTimerPlayback = useCallback(() => {
+    startAmbientLayers();
+    startSessionTimer();
+  }, [startAmbientLayers, startSessionTimer]);
 
   const handlePlayPause = useCallback(async () => {
     if (isPlaying) {
@@ -148,10 +161,27 @@ export function useMeditationPlayer({
     firedBellMinutesRef.current.clear();
     completingRef.current = false;
 
-    if (usesTimer) {
+    if (usesSessionTimer) {
+      const main = mainAudioRef.current;
+
+      if (usesGuidedAudio && main && mainSrc) {
+        main.loop = true;
+        try {
+          await main.play();
+        } catch {
+          alert("Não foi possível reproduzir o áudio. Configure URLs no catálogo (meditationAudio.ts ou VITE_MEDITATION_TRACKS).");
+          return;
+        }
+      }
+
+      if (usesTimer) {
+        if (currentTime === 0) startAmbientLayers();
+      } else if (soundscape.engine === "guided-plus-ambient") {
+        startAmbientLayers();
+      }
+
       setIsPlaying(true);
-      if (currentTime === 0) startAmbientLayers();
-      startTimerPlayback();
+      startSessionTimer();
       return;
     }
 
@@ -184,10 +214,12 @@ export function useMeditationPlayer({
     }
   }, [
     isPlaying,
+    usesSessionTimer,
+    usesGuidedAudio,
     usesTimer,
     currentTime,
     startAmbientLayers,
-    startTimerPlayback,
+    startSessionTimer,
     soundscape,
     mainSrc,
     stopTimer,
@@ -199,16 +231,16 @@ export function useMeditationPlayer({
     setCurrentTime(0);
     setIsPlaying(false);
     stopAllAudio();
-    if (usesTimer) setDuration(targetDurationSec);
+    if (usesSessionTimer) setDuration(targetDurationSec);
     else {
       if (mainAudioRef.current) mainAudioRef.current.currentTime = 0;
       if (streamAudioRef.current) streamAudioRef.current.currentTime = 0;
     }
-  }, [stopAllAudio, usesTimer, targetDurationSec]);
+  }, [stopAllAudio, usesSessionTimer, targetDurationSec]);
 
   const handleTimeUpdate = useCallback(() => {
     const main = mainAudioRef.current;
-    if (!main || usesTimer) return;
+    if (!main || usesSessionTimer) return;
     const t = main.currentTime;
     const audioDur = Number.isFinite(main.duration) ? main.duration : targetDurationSec;
     const d = Math.min(audioDur, targetDurationSec);
@@ -219,12 +251,12 @@ export function useMeditationPlayer({
       main.pause();
       void finishSession();
     }
-  }, [usesTimer, targetDurationSec, checkScheduledBells, finishSession]);
+  }, [usesSessionTimer, targetDurationSec, checkScheduledBells, finishSession]);
 
   const handleStreamTimeUpdate = useCallback(() => {
     const stream = streamAudioRef.current;
     const main = mainAudioRef.current;
-    if (!stream || usesTimer) return;
+    if (!stream || usesSessionTimer) return;
     const t = main?.currentTime ?? stream.currentTime;
     const audioDur = main && Number.isFinite(main.duration) ? main.duration : targetDurationSec;
     const d = Math.min(audioDur, targetDurationSec);
@@ -236,26 +268,26 @@ export function useMeditationPlayer({
       stream.pause();
       void finishSession();
     }
-  }, [usesTimer, targetDurationSec, checkScheduledBells, finishSession]);
+  }, [usesSessionTimer, targetDurationSec, checkScheduledBells, finishSession]);
 
   const handleLoadedMetadata = useCallback(() => {
     const main = mainAudioRef.current;
-    if (main && Number.isFinite(main.duration)) {
-      setDuration(main.duration);
-    } else if (usesTimer) {
+    if (usesSessionTimer) {
       setDuration(targetDurationSec);
+    } else if (main && Number.isFinite(main.duration)) {
+      setDuration(main.duration);
     }
-  }, [usesTimer, targetDurationSec]);
+  }, [usesSessionTimer, targetDurationSec]);
 
   const handleMainEnded = useCallback(() => {
-    if (usesTimer) return;
+    if (usesSessionTimer) return;
     void finishSession();
-  }, [usesTimer, finishSession]);
+  }, [usesSessionTimer, finishSession]);
 
   const handleProgressSeek = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const next = Number(e.target.value);
-      if (usesTimer) {
+      if (usesSessionTimer) {
         setCurrentTime(next);
         resetFiredBellsFromTime(next);
         return;
@@ -264,8 +296,13 @@ export function useMeditationPlayer({
       setCurrentTime(next);
       resetFiredBellsFromTime(next);
     },
-    [usesTimer, resetFiredBellsFromTime]
+    [usesSessionTimer, resetFiredBellsFromTime]
   );
+
+  useEffect(() => {
+    const main = mainAudioRef.current;
+    if (main) main.loop = usesGuidedAudio;
+  }, [usesGuidedAudio, mainSrc]);
 
   useEffect(() => {
     stopAllAudio();
@@ -273,14 +310,14 @@ export function useMeditationPlayer({
     setCurrentTime(0);
     firedBellMinutesRef.current.clear();
     completingRef.current = false;
-    if (usesTimer) {
+    if (usesSessionTimer) {
       setDuration(targetDurationSec);
     } else {
       setDuration(0);
       mainAudioRef.current?.load();
       streamAudioRef.current?.load();
     }
-  }, [soundscapeId, guidedTrackId, mainSrc, usesTimer, targetDurationSec, stopAllAudio, durationMinutes]);
+  }, [soundscapeId, guidedTrackId, mainSrc, usesSessionTimer, targetDurationSec, stopAllAudio, durationMinutes]);
 
   useEffect(() => () => stopAllAudio(), [stopAllAudio]);
 
@@ -297,6 +334,8 @@ export function useMeditationPlayer({
     durationMinutes,
     progressPercent,
     usesTimer,
+    usesGuidedAudio,
+    usesSessionTimer,
     handlePlayPause,
     handleRestart,
     handleTimeUpdate,

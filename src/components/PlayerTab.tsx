@@ -556,7 +556,7 @@ export default function PlayerTab({
               </button>
             </div>
             <p className="text-[10px] text-zinc-600">
-              A sessão termina ao chegar a {sessionDurationMin} min (também em frequências/solfégio).
+              A sessão termina aos {sessionDurationMin} min. A música repete em loop até lá chegar.
             </p>
           </div>
 
@@ -657,6 +657,7 @@ export default function PlayerTab({
                 ref={player.mainAudioRef}
                 src={player.mainSrc}
                 preload="metadata"
+                loop={player.usesGuidedAudio}
                 onTimeUpdate={player.handleTimeUpdate}
                 onLoadedMetadata={player.handleLoadedMetadata}
                 onEnded={player.handleMainEnded}
