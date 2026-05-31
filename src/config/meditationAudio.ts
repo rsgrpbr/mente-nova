@@ -25,12 +25,19 @@ function envUrl(key: string): string {
   return typeof v === "string" && v.trim() ? v.trim() : "";
 }
 
-/** URL da faixa: env (Supabase) → ficheiro local só em dev */
+/** URL pública no bucket meditacoes (só precisa de VITE_SUPABASE_URL) */
+function supabaseMeditationUrl(file: string): string {
+  const base = envUrl("VITE_SUPABASE_URL");
+  if (!base) return "";
+  return `${base.replace(/\/$/, "")}/storage/v1/object/public/meditacoes/${file}`;
+}
+
+/** env explícito → local (dev) → Supabase automático (prod) */
 function trackUrl(envKey: keyof ImportMetaEnv, file: string): string {
   const fromEnv = envUrl(envKey as string);
   if (fromEnv) return fromEnv;
   if (!import.meta.env.PROD) return AUDIO(file);
-  return "";
+  return supabaseMeditationUrl(file);
 }
 
 /** Catálogo principal — os teus áudios de meditação */

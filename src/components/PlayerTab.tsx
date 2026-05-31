@@ -432,18 +432,17 @@ export default function PlayerTab({
             </div>
           </div>
 
-          {/* Áudio guiado — escolha livre */}
-          {usesGuidedTrack ? (
-            <div className="bg-nature-card border border-nature-border rounded-xl p-4 space-y-3">
-              <h3 className="text-xs font-mono font-semibold text-zinc-400 uppercase flex items-center gap-1.5">
-                <Music2 className="w-3.5 h-3.5 text-gold" />
-                Áudio guiado
-              </h3>
-              <p className="text-[10px] text-zinc-500">
-                Escolha a narração — independente da semana do programa.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1">
-                {meditationTracks.map((track) => (
+          {/* Áudio guiado — escolha livre (sempre visível) */}
+          <div className="bg-nature-card border border-gold/25 rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-mono font-semibold text-gold uppercase flex items-center gap-1.5">
+              <Music2 className="w-3.5 h-3.5 text-gold" />
+              Áudio guiado
+            </h3>
+            <p className="text-[10px] text-zinc-500">
+              Escolhe a música — {meditationTracks.length} faixas disponíveis.
+            </p>
+            <div className="grid grid-cols-1 gap-1.5 max-h-52 overflow-y-auto pr-1">
+              {meditationTracks.map((track) => (
                   <button
                     key={track.id}
                     type="button"
@@ -468,9 +467,8 @@ export default function PlayerTab({
                     ) : null}
                   </button>
                 ))}
-              </div>
             </div>
-          ) : null}
+          </div>
 
           {/* Paisagem sonora + sinos tibetanos */}
           <div className="bg-nature-card border border-nature-border rounded-xl p-4 space-y-3">
