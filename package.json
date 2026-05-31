@@ -11,7 +11,8 @@
     "preview:mobile": "vite preview --host=0.0.0.0 --port=4173",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "clear-data": "node scripts/clear-all-data.mjs"
+    "clear-data": "node scripts/clear-all-data.mjs",
+    "upload-audio": "node scripts/upload-meditation-audio.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

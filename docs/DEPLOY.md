@@ -26,7 +26,19 @@ Adiciona para **Production**, **Preview** e **Development**:
 - `VITE_SUPABASE_ANON_KEY`
 - `VITE_GEMINI_API_KEY` (opcional)
 
-Opcionais de áudio: `VITE_AUDIO_SEMANA_1`, etc. (ver `.env.example`).
+Opcionais de áudio (após `npm run upload-audio`): `VITE_AUDIO_INCEPTION`, `VITE_AUDIO_EINAUDI_LIVE`, etc. (ver `.env.example`).
+
+### Áudios de meditação (Supabase Storage)
+
+1. No Supabase → **SQL Editor**, execute [`supabase/storage-meditacoes.sql`](../supabase/storage-meditacoes.sql).
+2. Na raiz do projeto, com `.env.local` configurado:
+
+   ```bash
+   npm run upload-audio
+   ```
+
+3. Copie as linhas `VITE_AUDIO_*` que o script imprimir para `.env.local` **e** para **Vercel → Environment Variables**.
+4. Redeploy na Vercel.
 
 7. **Deploy**. Cada `git push` na branch `main` gera um deploy novo.
 

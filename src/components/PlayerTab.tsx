@@ -14,6 +14,10 @@ import {
   TIBETAN_BELL_OPTIONS,
 } from "../config/soundscapes";
 import type { TibetanBellId } from "../lib/tibetanBells";
+import {
+  getAvailableMeditationTracks,
+  getMeditationTrackById,
+} from "../config/meditationAudio";
 import { useMeditationPlayer } from "../hooks/useMeditationPlayer";
 import DailyRemindersWidget from "./DailyRemindersWidget";
 
@@ -86,7 +90,11 @@ export default function PlayerTab({
   setDevModeOverride,
   onOpenDiary,
 }: PlayerTabProps) {
+  const meditationTracks = getAvailableMeditationTracks();
   const [selectedWeekNum, setSelectedWeekNum] = useState<number>(state.currentWeek);
+  const [selectedTrackId, setSelectedTrackId] = useState<string>(
+    () => meditationTracks[0]?.id ?? "hans-zimmer-inception-time"
+  );
   const [interceptInput, setInterceptInput] = useState<string>("");
   const [soundscapeId, setSoundscapeId] = useState<string>("guided-week");
   const [soundscapeCategory, setSoundscapeCategory] = useState<string>("guiada");
@@ -99,6 +107,14 @@ export default function PlayerTab({
   const [semana1RegistosSupabase, setSemana1RegistosSupabase] = useState(0);
 
   const activeWeekInfo = WEEKS_METADATA.find(w => w.weekNum === selectedWeekNum) || WEEKS_METADATA[0];
+  const selectedTrack = getMeditationTrackById(selectedTrackId) ?? meditationTracks[0];
+  const usesGuidedTrack =
+    soundscapeId === "guided-week" ||
+    SOUNDSCAPE_OPTIONS.some(
+      (s) =>
+        s.id === soundscapeId &&
+        (s.engine === "guided-mp3" || s.engine === "guided-plus-ambient")
+    );
 
   useEffect(() => {
     const mins = activeWeekInfo.audioDurationMin;
@@ -211,7 +227,7 @@ export default function PlayerTab({
   }, [selectedWeekNum, sessionDurationMin, completeMeditation, setCurrentWeekManual]);
 
   const player = useMeditationPlayer({
-    weekNum: selectedWeekNum,
+    guidedTrackId: selectedTrackId,
     durationMinutes: sessionDurationMin,
     soundscapeId,
     bells: { scheduleMinutes: bellScheduleMinutes, atEnd: bellAtEnd, bellType },
@@ -415,6 +431,46 @@ export default function PlayerTab({
               </button>
             </div>
           </div>
+
+          {/* Áudio guiado — escolha livre */}
+          {usesGuidedTrack ? (
+            <div className="bg-nature-card border border-nature-border rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-mono font-semibold text-zinc-400 uppercase flex items-center gap-1.5">
+                <Music2 className="w-3.5 h-3.5 text-gold" />
+                Áudio guiado
+              </h3>
+              <p className="text-[10px] text-zinc-500">
+                Escolha a narração — independente da semana do programa.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1">
+                {meditationTracks.map((track) => (
+                  <button
+                    key={track.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTrackId(track.id);
+                      if (track.durationMin) {
+                        setSessionDurationMin(track.durationMin);
+                        setBellScheduleMinutes([Math.floor(track.durationMin / 2)]);
+                      }
+                      player.stopAllAudio();
+                    }}
+                    className={`text-left px-2.5 py-2 rounded-lg border text-[10px] cursor-pointer transition-all ${
+                      selectedTrackId === track.id
+                        ? "bg-gold/15 border-gold text-gold"
+                        : "bg-nature-inner border-nature-border text-zinc-400 hover:border-gold/30"
+                    }`}
+                  >
+                    <p className="font-semibold leading-tight">{track.label}</p>
+                    <p className="opacity-70 line-clamp-2 mt-0.5">{track.description}</p>
+                    {track.durationMin ? (
+                      <p className="opacity-50 mt-0.5 font-mono">{track.durationMin} min sugeridos</p>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {/* Paisagem sonora + sinos tibetanos */}
           <div className="bg-nature-card border border-nature-border rounded-xl p-4 space-y-3">
@@ -625,7 +681,9 @@ export default function PlayerTab({
                 {activeWeekInfo.title}
               </span>
               <h2 className="text-lg font-semibold text-zinc-150 tracking-tight font-serif italic">
-                {activeWeekInfo.meditationTitle}
+                {usesGuidedTrack && selectedTrack
+                  ? selectedTrack.label
+                  : activeWeekInfo.meditationTitle}
               </h2>
               <p className="text-[10px] text-zinc-500 flex items-center justify-center gap-1">
                 <Waves className="w-3 h-3 text-gold" />

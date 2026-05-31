@@ -13,6 +13,9 @@ npm-debug.log*
 .env*
 !.env.example
 
+# MP3 locais de meditação (copie para public/audio/meditacao/)
+public/audio/meditacao/*.mp3
+
 *.local
 .vscode/
 .idea/

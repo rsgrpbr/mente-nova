@@ -3,10 +3,14 @@
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
-  readonly VITE_AUDIO_SEMANA_1?: string;
-  readonly VITE_AUDIO_SEMANA_2?: string;
-  readonly VITE_AUDIO_SEMANA_3?: string;
-  readonly VITE_AUDIO_SEMANA_4?: string;
+  /** JSON array: [{ "id","label","description","url","durationMin?" }] */
+  readonly VITE_MEDITATION_TRACKS?: string;
+  readonly VITE_AUDIO_INCEPTION?: string;
+  readonly VITE_AUDIO_EINAUDI_LIVE?: string;
+  readonly VITE_AUDIO_EINAUDI_SOLO?: string;
+  readonly VITE_AUDIO_EINAUDI_TINY_DESK?: string;
+  readonly VITE_AUDIO_PASSACAGLIA?: string;
+  readonly VITE_AUDIO_ICARUS?: string;
   readonly VITE_AUDIO_VISUALIZACAO?: string;
   readonly VITE_BELL_OMBU_URL?: string;
   readonly VITE_BELL_KANGSEGENGZE_URL?: string;

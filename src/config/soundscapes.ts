@@ -30,8 +30,8 @@ function envUrl(key: string): string | undefined {
 export const SOUNDSCAPE_OPTIONS: SoundscapeOption[] = [
   {
     id: "guided-week",
-    label: "Meditação guiada (MP3 da semana)",
-    description: "Narração principal configurada em VITE_AUDIO_SEMANA_*",
+    label: "Meditação guiada (MP3)",
+    description: "Narração do catálogo — escolha a faixa abaixo",
     category: "guiada",
     engine: "guided-mp3",
   },

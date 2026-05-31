@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, type ChangeEvent } from "react";
-import { getMeditationAudioUrl } from "../config/meditationAudio";
+import { getMeditationTrackUrl } from "../config/meditationAudio";
 import { getSoundscapeById } from "../config/soundscapes";
 import type { TibetanBellId } from "../lib/tibetanBells";
 import { playTibetanBell } from "../lib/tibetanBells";
@@ -14,7 +14,7 @@ export interface BellSettings {
 }
 
 interface UseMeditationPlayerOptions {
-  weekNum: number;
+  guidedTrackId: string;
   durationMinutes: number;
   soundscapeId: string;
   bells: BellSettings;
@@ -22,7 +22,7 @@ interface UseMeditationPlayerOptions {
 }
 
 export function useMeditationPlayer({
-  weekNum,
+  guidedTrackId,
   durationMinutes,
   soundscapeId,
   bells,
@@ -44,7 +44,7 @@ export function useMeditationPlayer({
     soundscape.engine === "ambient" ||
     (soundscape.engine === "stream" && !soundscape.streamUrl);
 
-  const guidedSrc = getMeditationAudioUrl(weekNum);
+  const guidedSrc = getMeditationTrackUrl(guidedTrackId);
   const mainSrc =
     soundscape.engine === "guided-mp3" || soundscape.engine === "guided-plus-ambient"
       ? guidedSrc
@@ -177,7 +177,7 @@ export function useMeditationPlayer({
         await main.play();
         setIsPlaying(true);
       } catch {
-        alert("Não foi possível reproduzir o áudio. Configure VITE_AUDIO_SEMANA_* no .env.local.");
+        alert("Não foi possível reproduzir o áudio. Configure URLs no catálogo (meditationAudio.ts ou VITE_MEDITATION_TRACKS).");
       }
     } else if (stream?.paused === false) {
       setIsPlaying(true);
@@ -280,7 +280,7 @@ export function useMeditationPlayer({
       mainAudioRef.current?.load();
       streamAudioRef.current?.load();
     }
-  }, [soundscapeId, weekNum, mainSrc, usesTimer, targetDurationSec, stopAllAudio, durationMinutes]);
+  }, [soundscapeId, guidedTrackId, mainSrc, usesTimer, targetDurationSec, stopAllAudio, durationMinutes]);
 
   useEffect(() => () => stopAllAudio(), [stopAllAudio]);
 
